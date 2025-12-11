@@ -3,6 +3,7 @@
 import Header from "@/components/Header"
 import { posts } from "@/lib/posts"
 import { useEffect, useState } from "react"
+import ReactMarkdown from "react-markdown"
 
 export default function BlogPost({ params }: { params: { slug: string } }) {
   const [post, setPost] = useState<any>(null)
@@ -87,61 +88,7 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
           </div>
 
           <div className="prose prose-invert max-w-none space-y-6">
-            {(post.content || generateSampleContent(post))
-              .split("\n\n")
-              .map((paragraph: string, idx: number) => {
-                if (paragraph.startsWith("#")) {
-                  const level = paragraph.match(/^#+/)?.[0].length || 2
-                  const text = paragraph.replace(/^#+\s/, "")
-                  const className = {
-                    1: "text-4xl font-bold mt-8 mb-4",
-                    2: "text-3xl font-bold mt-6 mb-3",
-                    3: "text-2xl font-bold mt-4 mb-2",
-                  }[level] || "text-xl font-bold mt-3 mb-2"
-
-                  return (
-                    <h2 key={idx} className={className}>
-                      {text}
-                    </h2>
-                  )
-                }
-
-                if (paragraph.startsWith("-")) {
-                  return (
-                    <ul key={idx} className="space-y-2 ml-4 list-disc">
-                      {paragraph
-                        .split("\n")
-                        .filter((line) => line.startsWith("-"))
-                        .map((line, i) => (
-                          <li key={i} className="text-muted-foreground leading-relaxed">
-                            {line.replace(/^-\s/, "")}
-                          </li>
-                        ))}
-                    </ul>
-                  )
-                }
-
-                if (paragraph.match(/^\d+\./)) {
-                  return (
-                    <ol key={idx} className="space-y-2 ml-4 list-decimal">
-                      {paragraph
-                        .split("\n")
-                        .filter((line) => line.match(/^\d+\./))
-                        .map((line, i) => (
-                          <li key={i} className="text-muted-foreground leading-relaxed">
-                            {line.replace(/^\d+\.\s/, "")}
-                          </li>
-                        ))}
-                    </ol>
-                  )
-                }
-
-                return (
-                  <p key={idx} className="text-muted-foreground leading-relaxed text-lg">
-                    {paragraph}
-                  </p>
-                )
-              })}
+            <ReactMarkdown>{post.content || generateSampleContent(post)}</ReactMarkdown>
           </div>
 
           {post.tags && post.tags.length > 0 && (

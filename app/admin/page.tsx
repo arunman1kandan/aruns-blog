@@ -1,6 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import ReactMarkdown from "react-markdown"
+// Editor is optional. We'll try to load it dynamically at runtime if available.
+// Import editor CSS now that the package has been installed — this styles the editor UI.
+import '@uiw/react-md-editor/markdown-editor.css'
 import { useRouter } from "next/navigation"
 import Header from "@/components/Header"
 
@@ -17,6 +21,7 @@ export default function AdminPanel() {
     excerpt: "",
     content: "",
   })
+  const [Editor, setEditor] = useState<any>(null)
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,6 +50,24 @@ export default function AdminPanel() {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
+
+  // Dynamically import the optional markdown editor on the client.
+  useEffect(() => {
+    let mounted = true
+    import("@uiw/react-md-editor")
+      .then((mod) => {
+        if (!mounted) return
+        const Comp = mod.default || mod
+        setEditor(() => Comp)
+      })
+      .catch(() => {
+        // Not installed — fall back to plain textarea
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,138 +192,167 @@ export default function AdminPanel() {
         </div>
 
         {/* Form */}
-        <div className="mb-12 rounded-2xl border border-border bg-card p-8">
+        <div className="mb-12 rounded-2xl border border-border bg-card p-6">
           <h2 className="text-2xl font-bold mb-6">{editingId ? "Edit Post" : "Create New Post"}</h2>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold mb-2">Title *</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Post title"
-                required
-                className="w-full rounded-md border border-border bg-background px-3 py-2"
-              />
-            </div>
 
-            <div className="grid grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Left column: metadata inputs */}
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold mb-2">Category</label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2"
-                >
-                  <option>Tech</option>
-                  <option>AI</option>
-                  <option>DevOps</option>
-                  <option>Engineering</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">Tags (comma-separated)</label>
+                <label htmlFor="title" className="block text-sm font-semibold mb-2">Title <span className="text-rose-500">*</span></label>
                 <input
+                  id="title"
                   type="text"
-                  name="tags"
-                  value={formData.tags}
+                  name="title"
+                  value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="e.g., Python, AI, LLM"
+                  placeholder="Post title"
+                  required
+                  aria-required
                   className="w-full rounded-md border border-border bg-background px-3 py-2"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2">Excerpt</label>
-              <textarea
-                name="excerpt"
-                value={formData.excerpt}
-                onChange={handleInputChange}
-                placeholder="Brief summary of the post"
-                rows={2}
-                className="w-full rounded-md border border-border bg-background px-3 py-2"
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Category</label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2"
+                  >
+                    <option>Tech</option>
+                    <option>AI</option>
+                    <option>DevOps</option>
+                    <option>Engineering</option>
+                  </select>
+                </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2">Content</label>
-              <textarea
-                name="content"
-                value={formData.content}
-                onChange={handleInputChange}
-                placeholder="Full post content (plain text or markdown)"
-                rows={8}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
-              />
-              <p className="mt-2 text-xs text-muted-foreground">Tip: You can write Markdown. Install optional editor packages for a richer editing UI.</p>
-            </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Python, AI, LLM"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2"
+                  />
+                </div>
+              </div>
 
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                className="flex-1 rounded-md bg-black text-white px-4 py-2 font-semibold cursor-pointer hover:bg-gray-800 transition-colors"
-              >
-                {editingId ? "Update Post" : "Create Post"}
-              </button>
-              {editingId && (
+              <div>
+                <label className="block text-sm font-semibold mb-2">Excerpt</label>
+                <textarea
+                  name="excerpt"
+                  value={formData.excerpt}
+                  onChange={handleInputChange}
+                  placeholder="Brief summary of the post"
+                  rows={3}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2"
+                />
+              </div>
+
+              <div className="flex gap-3 mt-4">
                 <button
-                  type="button"
-                  onClick={() => {
-                    setEditingId(null)
-                    setFormData({ title: "", category: "Tech", tags: "", excerpt: "", content: "" })
-                  }}
-                  className="flex-1 rounded-md border border-border px-4 py-2 font-semibold cursor-pointer hover:bg-muted transition-colors"
+                  type="submit"
+                  className="flex-1 rounded-md bg-black text-white px-4 py-2 font-semibold cursor-pointer hover:bg-gray-800 transition-colors"
                 >
-                  Cancel
+                  {editingId ? "Update Post" : "Create Post"}
                 </button>
-              )}
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(null)
+                      setFormData({ title: "", category: "Tech", tags: "", excerpt: "", content: "" })
+                    }}
+                    className="rounded-md border border-border px-4 py-2 font-semibold cursor-pointer hover:bg-muted transition-colors"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
-          </form>
-        </div>
 
-        {/* Posts List */}
-        <div className="rounded-2xl border border-border bg-card p-8">
-          <h2 className="text-2xl font-bold mb-6">Your Posts ({posts.length})</h2>
-          {posts.length === 0 ? (
-            <p className="text-muted-foreground">No posts yet. Create one above!</p>
-          ) : (
-            <div className="space-y-4">
-              {posts.map((post) => (
-                <div key={post.id} className="flex items-start justify-between gap-4 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{post.title}</h3>
-                    <p className="text-sm text-muted-foreground">{post.date}</p>
-                    <div className="mt-2 flex gap-2">
-                      {post.tags?.map((tag: string) => (
-                        <span key={tag} className="inline-block rounded-full border border-border px-2 py-0.5 text-xs">
-                          {tag}
-                        </span>
-                      ))}
+            {/* Editor */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">Content <span className="text-rose-500">*</span></label>
+              <div className="w-full rounded-md border border-border bg-background p-2">
+                {Editor ? (
+                  <div className="min-h-[280px]">
+                    <Editor
+                      value={formData.content}
+                      onChange={(v: any) => setFormData((prev) => ({ ...prev, content: v || "" }))}
+                      height={420}
+                    />
+                  </div>
+                ) : (
+                  <textarea
+                    name="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
+                    placeholder="Full post content (plain text or markdown)"
+                    rows={12}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
+                  />
+                )}
+              </div>
+
+              <p className="mt-2 text-xs text-muted-foreground">Content supports Markdown. Required fields are marked with <span className="text-rose-500">*</span>.</p>
+
+              <div className="mt-4">
+                <h3 className="text-sm font-semibold mb-2">Preview</h3>
+                <div className="rounded-md border border-border bg-card p-4 prose prose-invert max-w-none">
+                  <ReactMarkdown>{formData.content || "_Nothing to preview yet_"}</ReactMarkdown>
+                </div>
+              </div>
+            </div>
+
+            </form>
+
+            {/* Existing posts list */}
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold mb-4">Existing Posts</h2>
+              <div className="space-y-4">
+                {posts.length === 0 && <p className="text-sm text-muted-foreground">No posts yet.</p>}
+                {posts.map((post: any) => (
+                  <div key={post.id} className="rounded-lg border border-border bg-background p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground">{post.title}</h3>
+                        <p className="text-sm text-muted-foreground">{post.date}</p>
+                        <div className="mt-2 flex gap-2">
+                          {post.tags?.map((tag: string) => (
+                            <span key={tag} className="inline-block rounded-full border border-border px-2 py-0.5 text-xs">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        {post.excerpt && <p className="mt-2 text-sm text-muted-foreground">{post.excerpt}</p>}
+                      </div>
+
+                      <div className="ml-4 flex-shrink-0 flex flex-col gap-2">
+                        <button
+                          onClick={() => handleEdit(post)}
+                          className="rounded-md border border-border px-3 py-1 text-sm cursor-pointer hover:bg-muted transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(post.id)}
+                          className="rounded-md border border-red-200 px-3 py-1 text-sm text-red-600 cursor-pointer hover:bg-red-50 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(post)}
-                      className="rounded-md border border-border px-3 py-1 text-sm cursor-pointer hover:bg-muted transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(post.id)}
-                      className="rounded-md border border-red-200 px-3 py-1 text-sm text-red-600 cursor-pointer hover:bg-red-50 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
       </main>
     </div>
   )
