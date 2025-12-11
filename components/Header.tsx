@@ -3,10 +3,33 @@
 import Link from "next/link"
 import { Button } from "./ui/button"
 import ThemeSwitcher from "./ThemeSwitcher"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabase"
 
 export default function Header() {
     const [open, setOpen] = useState(false)
+    const [user, setUser] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+      const checkAuth = async () => {
+        const { data } = await supabase.auth.getSession()
+        setUser(data.session?.user || null)
+        setLoading(false)
+      }
+
+      checkAuth()
+
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          setUser(session?.user || null)
+        }
+      )
+
+      return () => {
+        authListener?.subscription.unsubscribe()
+      }
+    }, [])
 
     return (
       <header className="w-full py-4 border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 transition-colors duration-300 dark:border-border">
@@ -45,6 +68,21 @@ export default function Header() {
             </button>
 
             <ThemeSwitcher />
+            
+            {!loading && (
+              <>
+                {user ? (
+                  <Link href="/dashboard" className="hidden sm:inline-block">
+                    <Button variant="black" size="sm" className="cursor-pointer">Dashboard</Button>
+                  </Link>
+                ) : (
+                  <Link href="/auth" className="hidden sm:inline-block">
+                    <Button variant="black" size="sm" className="cursor-pointer">Sign In</Button>
+                  </Link>
+                )}
+              </>
+            )}
+            
             <a href="mailto:arunm291003@gmail.com" className="hidden sm:inline-block">
               <Button variant="black" size="sm" className="cursor-pointer">Contact</Button>
             </a>
@@ -58,7 +96,16 @@ export default function Header() {
                 <Link href="/projects" className="py-2 text-foreground border-b border-border">Projects</Link>
                 <Link href="/ai" className="py-2 text-foreground border-b border-border">AI</Link>
                 <Link href="/blog" className="py-2 text-foreground border-b border-border">Blog</Link>
-                <Link href="/about" className="py-2 text-foreground">About</Link>
+                <Link href="/about" className="py-2 text-foreground border-b border-border">About</Link>
+                {!loading && (
+                  <>
+                    {user ? (
+                      <Link href="/dashboard" className="py-2 text-foreground border-b border-border">Dashboard</Link>
+                    ) : (
+                      <Link href="/auth" className="py-2 text-foreground border-b border-border">Sign In</Link>
+                    )}
+                  </>
+                )}
                 <div className="pt-2 flex items-center justify-between">
                   <ThemeSwitcher />
                   <a href="mailto:arunm291003@gmail.com">

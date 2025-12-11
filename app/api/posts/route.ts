@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { readPosts, createPost, updatePost, deletePost, generateSlug, BlogPost } from "@/lib/posts-storage"
+import { getPosts, createBlogPost, updateBlogPost, deleteBlogPost, generateSlug, BlogPost } from "@/lib/supabase-posts"
 import { verifyAdminAuth } from "@/lib/auth"
 
 export async function GET() {
   try {
-    const posts = readPosts()
+    const posts = await getPosts()
     return NextResponse.json(posts)
   } catch (error) {
+    console.error("Error fetching posts:", error)
     return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 })
   }
 }
@@ -39,8 +40,7 @@ export async function POST(req: NextRequest) {
       parsedTags.push("latest")
     }
 
-    const newPost: BlogPost = {
-      id: Date.now().toString(),
+    const newPost = {
       title,
       slug: generateSlug(title),
       category: category || "Tech",
@@ -57,10 +57,10 @@ export async function POST(req: NextRequest) {
       content: content || "",
     }
 
-    createPost(newPost)
-    return NextResponse.json(newPost, { status: 201 })
+    const createdPost = await createBlogPost(newPost)
+    return NextResponse.json(createdPost, { status: 201 })
   } catch (error) {
-    console.error(error)
+    console.error("Error creating post:", error)
     return NextResponse.json({ error: "Failed to create post" }, { status: 500 })
   }
 }
@@ -79,10 +79,10 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const updated = updatePost(id, updates)
+    const updated = await updateBlogPost(id, updates)
     return NextResponse.json(updated)
   } catch (error) {
-    console.error(error)
+    console.error("Error updating post:", error)
     return NextResponse.json({ error: "Failed to update post" }, { status: 500 })
   }
 }
@@ -101,10 +101,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    deletePost(id)
+    await deleteBlogPost(id)
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error(error)
+    console.error("Error deleting post:", error)
     return NextResponse.json({ error: "Failed to delete post" }, { status: 500 })
   }
 }
+
