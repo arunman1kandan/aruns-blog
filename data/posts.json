@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1765418075167",
+    "title": "TEST",
+    "slug": "test",
+    "category": "Tech",
+    "date": "Dec 11, 2025",
+    "image": "/post-1.svg",
+    "tags": [
+      "Python",
+      "ML",
+      "NLP",
+      "latest"
+    ],
+    "isNew": true,
+    "excerpt": "NLP",
+    "readingTime": 1,
+    "content": "NLP TEST :)"
+  }
+]
